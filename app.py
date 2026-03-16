@@ -141,3 +141,6 @@ def getlist():
     db.close()
     messages = [row['text'] for row in rows]
     return jsonify(messages)
+
+if __name__ == '__main__':
+    app.run(debug=True, host='0.0.0.0', port=5000)
