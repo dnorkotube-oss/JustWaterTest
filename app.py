@@ -50,16 +50,16 @@ def change_event():
     """
     data = request.get_json()
     if not data or 'text' not in data:
-        abort(400, description="Missing 'text' parameter")
+        abort(400, description="Отсутствует параметр 'text'")
     text = data['text']
     if len(text) > 300:
-        abort(400, description="Text too long, max 300 characters")
+        abort(400, description="Текст слишком длинный, максимум 300 символов!")
 
     if not data or 'secretword' not in data:
-        abort(400, description="Missing 'secretword' parameter")
+        abort(400, description="Отсутствует параметр 'secretword'!")
     secretword = data['secretword']
     if secretword != get_secretword():
-        abort(400, description="Wrong secret word")
+        abort(400, description="Неправильное секретное слово!")
 
     db = get_db()
     cursor = db.cursor()
@@ -73,7 +73,7 @@ def change_event():
 
     db.commit()
     db.close()
-    return jsonify({"status": "ok", "message": "Event updated"})
+    return jsonify({"status": "ok", "message": "Событие обновлено!"})
 
 @app.route('/set_secretword', methods=['POST'])
 def set_secretword():
@@ -83,10 +83,10 @@ def set_secretword():
     """
     data = request.get_json()
     if not data or 'secretword' not in data:
-        abort(400, description="Missing 'secretword' parameter")
+        abort(400, description="Отсутствует параметр 'secretword'!")
     text = data['secretword']
     if len(text) > 300:
-        abort(400, description="Text too long, max 300 characters")
+        abort(400, description="Текст слишком длинный, максимум 300 символов!")
 
     db = get_db()
     cursor = db.cursor()
@@ -100,17 +100,17 @@ def set_secretword():
 
     db.commit()
     db.close()
-    return jsonify({"status": "ok", "message": "Secretword updated"})
+    return jsonify({"status": "ok", "message": "Секретное слово обновлено!"})
 
-@app.route('/get_event', methods=['GET'])
+@app.route('/get_event', methods=['POST'])
 def get_event():
     """Возвращает текст из таблицы event или пустую строку, если записи нет."""
     data = request.get_json()
     if not data or 'secretword' not in data:
-        abort(400, description="Missing 'secretword' parameter")
+        abort(400, description="Отсутствует параметр 'secretword'")
     secretword = data['secretword']
     if secretword != get_secretword():
-        abort(400, description="Wrong secret word")
+        abort(400, description="Неправильное секретное слово!")
 
     db = get_db()
     cursor = db.cursor()
@@ -121,7 +121,6 @@ def get_event():
         return row['content']
     return ""
 
-@app.route('/get_secretword', methods=['GET'])
 def get_secretword():
     """Возвращает текст из таблицы secretword или пустую строку, если записи нет."""
     db = get_db()
@@ -141,16 +140,20 @@ def writeme():
     """
     data = request.get_json()
     if not data or 'text' not in data:
-        abort(400, description="Missing 'text' parameter")
+        abort(400, description="Отсутствует параметр 'text'")
     text = data['text']
     if len(text) > 50:
-        abort(400, description="Text too long, max 50 characters")
+        abort(400, description="Текст слишком длинный, максимум 50 символов!")
 
     if not data or 'secretword' not in data:
-        abort(400, description="Missing 'secretword' parameter")
+        abort(400, description="Отсутствует параметр 'secretword'")
     secretword = data['secretword']
     if secretword != get_secretword():
-        abort(400, description="Wrong secret word")
+        abort(400, description="Неправильное секретное слово!")
+
+    addtext = ""
+    if 'addtext' in data:
+        addtext = data['addtext']
 
     db = get_db()
     cursor = db.cursor()
@@ -160,10 +163,11 @@ def writeme():
         db.close()
         abort(400, description="Message limit reached (max 100)")
 
-    cursor.execute("INSERT INTO messages (text) VALUES (?)", (text,))
+    cursor.execute("DELETE FROM messages WHERE text LIKE ?", (text + '%',))
+    cursor.execute("INSERT INTO messages (text) VALUES (?)", (text + addtext,))
     db.commit()
     db.close()
-    return jsonify({"status": "ok", "message": "Message added"})
+    return jsonify({"status": "ok", "message": "Событие добавлено"})
 
 @app.route('/deleteme', methods=['POST'])
 def deleteme():
@@ -173,20 +177,20 @@ def deleteme():
     """
     data = request.get_json()
     if not data or 'text' not in data:
-        abort(400, description="Missing 'text' parameter")
+        abort(400, description="Отсутствует параметр 'text'")
     text = data['text']
     if len(text) > 50:
-        abort(400, description="Text too long, max 50 characters")
+        abort(400, description="Текст слишком длинный, максимум 50 символов!")
 
     if not data or 'secretword' not in data:
-        abort(400, description="Missing 'secretword' parameter")
+        abort(400, description="Отсутствует параметр 'secretword'")
     secretword = data['secretword']
     if secretword != get_secretword():
-        abort(400, description="Wrong secret word")
+        abort(400, description="Неправильное секретное слово!")
 
     db = get_db()
     cursor = db.cursor()
-    cursor.execute("DELETE FROM messages WHERE text = ?", (text,))
+    cursor.execute("DELETE FROM messages WHERE text LIKE ?", (text + '%',))
     deleted = cursor.rowcount
     db.commit()
     db.close()
@@ -197,10 +201,10 @@ def clearlist():
     """Удаляет все записи из таблицы messages."""
     data = request.get_json()
     if not data or 'secretword' not in data:
-        abort(400, description="Missing 'secretword' parameter")
+        abort(400, description="Отсутствует параметр 'secretword'")
     secretword = data['secretword']
     if secretword != get_secretword():
-        abort(400, description="Wrong secret word")
+        abort(400, description="Неправильное секретное слово!")
 
     db = get_db()
     cursor = db.cursor()
@@ -209,15 +213,15 @@ def clearlist():
     db.close()
     return jsonify({"status": "ok", "message": "All messages cleared"})
 
-@app.route('/getlist', methods=['GET'])
+@app.route('/getlist', methods=['POST'])
 def getlist():
     """Возвращает все записи из таблицы messages в виде JSON-массива."""
     data = request.get_json()
     if not data or 'secretword' not in data:
-        abort(400, description="Missing 'secretword' parameter")
+        abort(400, description="Отсутствует параметр 'secretword'")
     secretword = data['secretword']
     if secretword != get_secretword():
-        abort(400, description="Wrong secret word")
+        abort(400, description="Неправильное секретное слово!")
 
     db = get_db()
     cursor = db.cursor()
