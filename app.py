@@ -121,6 +121,11 @@ def get_event():
         return row['content']
     return ""
 
+@app.route('/dontsleep', methods=['POST'])
+def dontsleep():
+    """Возвращает текст из таблицы event или пустую строку, если записи нет."""
+    return "ok"
+
 def get_secretword():
     """Возвращает текст из таблицы secretword или пустую строку, если записи нет."""
     db = get_db()
